@@ -16,6 +16,13 @@ try:
         led.set_color(color)
         time.sleep(.5)
     
+    print('Changing brightness')
+    for i in range(5+1):
+        val = i/5
+        print(f'[*] {int(val*100):03d}%')
+        led.set_brightness(val)
+        time.sleep(.5)
+    
     print('Changing colors in white-mode')
     for i in range(-20, 20+1):
         val = i/20
