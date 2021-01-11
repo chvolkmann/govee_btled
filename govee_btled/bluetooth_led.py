@@ -79,7 +79,16 @@ class BluetoothLED:
         
         frame += bytes([checksum & 0xFF])
         self._dev.char_write(UUID_CONTROL_CHARACTERISTIC, frame)
-    
+
+    def ping ( self):
+        # This needs to be called evey 2 seconds to 'keep awake' the connection
+        # as per info from:
+        # https://github.com/egold555/Govee-H6113-Reverse-Engineering
+
+        pinger = b'\xAA\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xAB'
+
+        self._dev.char_write(UUID_CONTROL_CHARACTERISTIC, pinger)
+
     def set_state(self, onoff):
         """ Controls the power state of the LED. """
         self._send(LedCommand.POWER, [0x1 if onoff else 0x0])
