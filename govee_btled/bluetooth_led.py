@@ -5,6 +5,9 @@ from enum import IntEnum
 import pygatt
 from colour import Color
 
+import time
+import threading
+import logging
 from .shades_of_white import values as SHADES_OF_WHITE
 from .errors import ConnectionTimeout
 
@@ -39,16 +42,35 @@ class BluetoothLED:
         self.mac = mac
         self._bt = bt_backend_cls()
         self._bt.start()
+        self.runflag = 1
         try:
             self._dev = self._bt.connect(self.mac)
         except pygatt.exceptions.NotConnectedError as err:
             self._cleanup()
             raise ConnectionTimeout(self.mac, err)
-    
+
+        try:
+            if ( self.runflag == 1 ):
+                t1 = threading.Thread(target=self._pingloop )
+                t1.setName("pingthread")
+                t1.start()
+        except:
+            pass
+
     def __del__(self):
         self._cleanup()
 
+    def _pingloop(self):  # This runs as a separate thread to send keep alive
+        while True:
+            if self.runflag == 0:
+                break
+
+            time.sleep(2.0)
+            self.pinger()
+
     def _cleanup(self):
+        self.runflag = 0   # this is to trigger the ping thread to quit.
+
         if hasattr(self, '_dev') and self._dev:
             self._dev.disconnect()
             self._dev = None
@@ -79,7 +101,16 @@ class BluetoothLED:
         
         frame += bytes([checksum & 0xFF])
         self._dev.char_write(UUID_CONTROL_CHARACTERISTIC, frame)
-    
+
+    def pinger ( self):
+        # This needs to be called evey 2 seconds to 'keep awake' the connection
+        # as per info from:
+        # https://github.com/egold555/Govee-H6113-Reverse-Engineering
+
+        pinger = b'\xAA\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xAB'
+
+        self._dev.char_write(UUID_CONTROL_CHARACTERISTIC, pinger)
+
     def set_state(self, onoff):
         """ Controls the power state of the LED. """
         self._send(LedCommand.POWER, [0x1 if onoff else 0x0])
