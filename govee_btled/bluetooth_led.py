@@ -35,12 +35,12 @@ class LedMode(IntEnum):
 
 class BluetoothLED:
     """ Bluetooth client for Govee's RGB LED H6001. """
-    def __init__(self, mac, bt_backend_cls=pygatt.GATTToolBackend):
+    def __init__(self, mac, bt_backend_cls=pygatt.GATTToolBackend, address_type=pygatt.BLEAddressType.public):
         self.mac = mac
         self._bt = bt_backend_cls()
         self._bt.start()
         try:
-            self._dev = self._bt.connect(self.mac)
+            self._dev = self._bt.connect(self.mac, address_type=address_type)
         except pygatt.exceptions.NotConnectedError as err:
             self._cleanup()
             raise ConnectionTimeout(self.mac, err)
