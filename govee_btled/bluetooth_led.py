@@ -40,7 +40,7 @@ class BluetoothLED:
         self._bt = bt_backend_cls()
         self._bt.start()
         try:
-            self._dev = self._bt.connect(self.mac, address_type)
+            self._dev = self._bt.connect(self.mac, addresss_type=address_type)
         except pygatt.exceptions.NotConnectedError as err:
             self._cleanup()
             raise ConnectionTimeout(self.mac, err)
